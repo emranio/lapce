@@ -23,10 +23,91 @@ use crate::{
     editor::EditorData,
     listener::Listener,
     palette::kind::PaletteKind,
-    panel::{kind::PanelKind, position::PanelContainerPosition},
+    panel::{data::PanelData, kind::PanelKind, position::PanelContainerPosition},
     source_control::SourceControlData,
     window_tab::{WindowTabData, WorkProgress},
 };
+
+pub fn panel_toggle_controls(
+    panel: PanelData,
+    config: ReadSignal<Arc<LapceConfig>>,
+) -> impl View {
+    stack((
+        {
+            let panel = panel.clone();
+            let icon = {
+                let panel = panel.clone();
+                move || {
+                    if panel.is_container_shown(&PanelContainerPosition::Left, true)
+                    {
+                        LapceIcons::SIDEBAR_LEFT
+                    } else {
+                        LapceIcons::SIDEBAR_LEFT_OFF
+                    }
+                }
+            };
+            clickable_icon(
+                icon,
+                move || panel.toggle_container_visual(&PanelContainerPosition::Left),
+                || false,
+                || false,
+                || "Toggle Left Panel",
+                config,
+            )
+        },
+        {
+            let panel = panel.clone();
+            let icon = {
+                let panel = panel.clone();
+                move || {
+                    if panel
+                        .is_container_shown(&PanelContainerPosition::Bottom, true)
+                    {
+                        LapceIcons::LAYOUT_PANEL
+                    } else {
+                        LapceIcons::LAYOUT_PANEL_OFF
+                    }
+                }
+            };
+            clickable_icon(
+                icon,
+                move || {
+                    panel.toggle_container_visual(&PanelContainerPosition::Bottom)
+                },
+                || false,
+                || false,
+                || "Toggle Bottom Panel",
+                config,
+            )
+        },
+        {
+            let panel = panel.clone();
+            let icon = {
+                let panel = panel.clone();
+                move || {
+                    if panel.is_container_shown(&PanelContainerPosition::Right, true)
+                    {
+                        LapceIcons::SIDEBAR_RIGHT
+                    } else {
+                        LapceIcons::SIDEBAR_RIGHT_OFF
+                    }
+                }
+            };
+            clickable_icon(
+                icon,
+                move || {
+                    panel.toggle_container_visual(&PanelContainerPosition::Right)
+                },
+                || false,
+                || false,
+                || "Toggle Right Panel",
+                config,
+            )
+        },
+    ))
+    .style(|s| s.height_pct(100.0).items_center())
+    .debug_name("Panel Toggle Controls")
+}
 
 pub fn status(
     window_tab_data: Rc<WindowTabData>,
@@ -233,90 +314,6 @@ pub fn status(
                 .flex_basis(0.0)
                 .flex_grow(1.0)
                 .items_center()
-        }),
-        stack((
-            {
-                let panel = panel.clone();
-                let icon = {
-                    let panel = panel.clone();
-                    move || {
-                        if panel
-                            .is_container_shown(&PanelContainerPosition::Left, true)
-                        {
-                            LapceIcons::SIDEBAR_LEFT
-                        } else {
-                            LapceIcons::SIDEBAR_LEFT_OFF
-                        }
-                    }
-                };
-                clickable_icon(
-                    icon,
-                    move || {
-                        panel.toggle_container_visual(&PanelContainerPosition::Left)
-                    },
-                    || false,
-                    || false,
-                    || "Toggle Left Panel",
-                    config,
-                )
-            },
-            {
-                let panel = panel.clone();
-                let icon = {
-                    let panel = panel.clone();
-                    move || {
-                        if panel.is_container_shown(
-                            &PanelContainerPosition::Bottom,
-                            true,
-                        ) {
-                            LapceIcons::LAYOUT_PANEL
-                        } else {
-                            LapceIcons::LAYOUT_PANEL_OFF
-                        }
-                    }
-                };
-                clickable_icon(
-                    icon,
-                    move || {
-                        panel
-                            .toggle_container_visual(&PanelContainerPosition::Bottom)
-                    },
-                    || false,
-                    || false,
-                    || "Toggle Bottom Panel",
-                    config,
-                )
-            },
-            {
-                let panel = panel.clone();
-                let icon = {
-                    let panel = panel.clone();
-                    move || {
-                        if panel
-                            .is_container_shown(&PanelContainerPosition::Right, true)
-                        {
-                            LapceIcons::SIDEBAR_RIGHT
-                        } else {
-                            LapceIcons::SIDEBAR_RIGHT_OFF
-                        }
-                    }
-                };
-                clickable_icon(
-                    icon,
-                    move || {
-                        panel.toggle_container_visual(&PanelContainerPosition::Right)
-                    },
-                    || false,
-                    || false,
-                    || "Toggle Right Panel",
-                    config,
-                )
-            },
-        ))
-        .style(move |s| {
-            s.height_pct(100.0)
-                .items_center()
-                .color(config.get().color(LapceColor::STATUS_FOREGROUND))
         }),
         stack({
             let palette_clone = palette.clone();

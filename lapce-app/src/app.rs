@@ -2035,12 +2035,24 @@ fn main_split(window_tab_data: Rc<WindowTabData>) -> impl View {
     let plugin = window_tab_data.plugin.clone();
     let dragging: RwSignal<Option<(RwSignal<usize>, EditorTabId)>> =
         create_rw_signal(None);
-    split_list(
-        root_split,
-        window_tab_data.clone(),
-        plugin.clone(),
-        dragging,
-    )
+    let has_workspace_path = window_tab_data.workspace.path.is_some();
+    let show_home = move || {
+        !has_workspace_path && root_split.with(|split| split.children.is_empty())
+    };
+    stack((
+        split_list(
+            root_split,
+            window_tab_data.clone(),
+            plugin.clone(),
+            dragging,
+        )
+        .style(|s| s.size_full()),
+        empty_workspace_home(window_tab_data.clone()).style(move |s| {
+            s.absolute()
+                .size_full()
+                .apply_if(!show_home(), |s| s.hide())
+        }),
+    ))
     .style(move |s| {
         let config = config.get();
         let is_hidden = panel.panel_bottom_maximized(true)
@@ -2053,6 +2065,64 @@ fn main_split(window_tab_data: Rc<WindowTabData>) -> impl View {
             .flex_basis(0.0)
     })
     .debug_name("Main Split")
+}
+
+fn empty_workspace_home(window_tab_data: Rc<WindowTabData>) -> impl View {
+    let config = window_tab_data.common.config;
+    let workbench_command = window_tab_data.common.workbench_command;
+
+    container(
+        container(
+            stack((
+                svg(move || config.get().ui_svg(LapceIcons::DIRECTORY_CLOSED))
+                    .style(move |s| {
+                        s.size(32.0, 32.0)
+                            .color(config.get().color(LapceColor::LAPCE_ICON_ACTIVE))
+                    }),
+                label(|| "No working directory selected".to_string()).style(
+                    move |s| {
+                        s.margin_top(12.0)
+                            .font_size(config.get().ui.font_size() as f32 + 2.0)
+                            .font_weight(Weight::BOLD)
+                            .color(config.get().color(LapceColor::EDITOR_FOREGROUND))
+                            .selectable(false)
+                    },
+                ),
+                label(|| "Click here to select a working directory.".to_string())
+                    .style(move |s| {
+                        s.margin_top(6.0)
+                            .color(config.get().color(LapceColor::EDITOR_DIM))
+                            .selectable(false)
+                    }),
+            ))
+            .style(|s| s.flex_col().items_center()),
+        )
+        .on_click_stop(move |_| {
+            workbench_command.send(LapceWorkbenchCommand::OpenFolder);
+        })
+        .style(move |s| {
+            let config = config.get();
+            s.padding_horiz(28.0)
+                .padding_vert(22.0)
+                .items_center()
+                .border(1.0)
+                .border_radius(12.0)
+                .border_color(config.color(LapceColor::LAPCE_BORDER))
+                .background(config.color(LapceColor::PANEL_BACKGROUND))
+                .hover(|s| {
+                    s.cursor(CursorStyle::Pointer).background(
+                        config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
+                    )
+                })
+                .active(|s| {
+                    s.background(
+                        config.color(LapceColor::PANEL_HOVERED_ACTIVE_BACKGROUND),
+                    )
+                })
+        }),
+    )
+    .style(|s| s.size_full().items_center().justify_center())
+    .debug_name("Empty Workspace Home")
 }
 
 pub fn not_clickable_icon<S: std::fmt::Display + 'static>(

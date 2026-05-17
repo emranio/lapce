@@ -20,6 +20,8 @@ use crate::{
     config::{LapceConfig, color::LapceColor, icon::LapceIcons},
     listener::Listener,
     main_split::MainSplitData,
+    panel::data::PanelData,
+    status::panel_toggle_controls,
     update::ReleaseInfo,
     window_tab::WindowTabData,
     workspace::LapceWorkspace,
@@ -311,6 +313,7 @@ fn right(
     update_in_progress: RwSignal<bool>,
     num_window_tabs: Memo<usize>,
     window_maximized: RwSignal<bool>,
+    panel: PanelData,
     config: ReadSignal<Arc<LapceConfig>>,
 ) -> impl View {
     let latest_version = create_memo(move |_| {
@@ -331,6 +334,7 @@ fn right(
     stack((
         drag_window_area(empty())
             .style(|s| s.height_pct(100.0).flex_basis(0.0).flex_grow(1.0)),
+        panel_toggle_controls(panel, config).style(|s| s.margin_right(6.0)),
         stack((
             not_clickable_icon(
                 || LapceIcons::SETTINGS,
@@ -451,6 +455,7 @@ pub fn title(window_tab_data: Rc<WindowTabData>) -> impl View {
             update_in_progress,
             num_window_tabs,
             window_maximized,
+            window_tab_data.panel.clone(),
             config,
         ),
     ))
